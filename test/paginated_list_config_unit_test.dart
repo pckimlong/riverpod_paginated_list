@@ -1,4 +1,3 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod_paginated_list/riverpod_paginated_list.dart';
@@ -56,7 +55,7 @@ void main() {
       final externalItems = <int, Widget Function(BuildContext)>{
         0: (_) => const Text('Header'),
         5: (_) => const Text('Ad'),
-      }.lock;
+      };
 
       final config = PaginatedListConfig<String>(
         watchPage: (_) => throw UnimplementedError(),

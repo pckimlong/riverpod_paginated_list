@@ -37,3 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dart SDK: "^3.10.1"
 
 ## [0.1.1]
+
+- Add more tests
+- Remove overhead of using immutable collections for external items

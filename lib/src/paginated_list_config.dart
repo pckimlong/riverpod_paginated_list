@@ -176,7 +176,7 @@ class PaginatedListConfig<T> {
     }
 
     // Check for external item first
-    final externalBuilder = externalItems?.get(viewIndex);
+    final externalBuilder = externalItems?[viewIndex];
     if (externalBuilder != null) {
       return Builder(builder: externalBuilder);
     }

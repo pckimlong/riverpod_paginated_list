@@ -1,4 +1,3 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/widgets.dart';
 
 /// A map of view indices to external widget builders.
@@ -13,7 +12,7 @@ import 'package:flutter/widgets.dart';
 ///   5: (context) => AdvertisementBanner(),
 /// }.lock,
 /// ```
-typedef ExternalItems = IMap<int, Widget Function(BuildContext context)>;
+typedef ExternalItems = Map<int, Widget Function(BuildContext context)>;
 
 /// Default page size for pagination.
 const kDefaultPageSize = 30;

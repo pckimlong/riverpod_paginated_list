@@ -68,7 +68,7 @@ void main() {
         0: AsyncValue.data(const IListConst(['A'])),
       };
 
-      final external = <int, Widget Function(BuildContext)>{0: (_) => const Text('external')}.lock;
+      final external = <int, Widget Function(BuildContext)>{0: (_) => const Text('external')};
 
       final config = PaginatedListConfig<String>(
         watchPage: (paging) =>

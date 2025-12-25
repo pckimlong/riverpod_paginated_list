@@ -1,4 +1,3 @@
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod_paginated_list/riverpod_paginated_list.dart';
@@ -13,13 +12,13 @@ void main() {
     });
 
     test('returns viewIndex when external items is empty', () {
-      final config = _TestableConfig(externalItems: <int, Widget Function(BuildContext)>{}.lock);
+      final config = _TestableConfig(externalItems: <int, Widget Function(BuildContext)>{});
       expect(config.getDataIndex(0), 0);
       expect(config.getDataIndex(5), 5);
     });
 
     test('adjusts index for single external item at start', () {
-      final config = _TestableConfig(externalItems: {0: (_) => const SizedBox()}.lock);
+      final config = _TestableConfig(externalItems: {0: (_) => const SizedBox()});
       expect(config.getDataIndex(0), -1);
       expect(config.getDataIndex(1), 0);
       expect(config.getDataIndex(2), 1);
@@ -28,7 +27,7 @@ void main() {
 
     test('adjusts index for multiple external items', () {
       final config = _TestableConfig(
-        externalItems: {0: (_) => const SizedBox(), 5: (_) => const SizedBox()}.lock,
+        externalItems: {0: (_) => const SizedBox(), 5: (_) => const SizedBox()},
       );
       expect(config.getDataIndex(1), 0);
       expect(config.getDataIndex(4), 3);
@@ -37,7 +36,7 @@ void main() {
     });
 
     test('handles external items not at start', () {
-      final config = _TestableConfig(externalItems: {3: (_) => const SizedBox()}.lock);
+      final config = _TestableConfig(externalItems: {3: (_) => const SizedBox()});
       expect(config.getDataIndex(0), 0);
       expect(config.getDataIndex(2), 2);
       expect(config.getDataIndex(3), 2);
