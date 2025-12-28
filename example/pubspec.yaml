@@ -3,7 +3,8 @@ description: Example app for riverpod_paginated_list
 publish_to: none
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.10.1
+  flutter: ">=3.24.0"
 
 dependencies:
   flutter:
