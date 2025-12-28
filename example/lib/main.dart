@@ -193,7 +193,7 @@ class ExternalItemsExamplePage extends ConsumerWidget {
       externalItems: <int, Widget Function(BuildContext)>{
         0: (context) => const HeaderWidget(),
         6: (context) => const AdBanner(),
-      }.lock,
+      },
     );
 
     final isEmpty = pagingConfig.watchIsEmpty(ref);

@@ -35,3 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fast_immutable_collections: ">=10.2.4 <12.0.0"
 - Flutter SDK: ">=3.24.0"
 - Dart SDK: "^3.10.1"
+
+## [0.1.1]
+
+- Add more tests
+- Remove overhead of using immutable collections for external items
+
+## [0.1.2] - 2025-12-28
+
+- `useCache` (default true) allows rendering cached/previous `AsyncValue.value` while loading (incl. Riverpod v3 `isFromCache`).
+- Skeleton loading is shown only for true initial loads when no cached/previous value is available.

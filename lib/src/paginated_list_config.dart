@@ -43,6 +43,7 @@ class PaginatedListConfig<T> {
   /// [watchPage] is required and should return a provider for the given page.
   const PaginatedListConfig({
     required this.watchPage,
+    this.useCache = true,
     this.pageSize = kDefaultPageSize,
     this.firstPageIsZeroBased = true,
     this.externalItems,
@@ -54,6 +55,15 @@ class PaginatedListConfig<T> {
   /// The provider should return `AsyncValue<IList<T>>` containing the
   /// items for that page.
   final ProviderBase<AsyncValue<IList<T>>> Function(Paging paging) watchPage;
+
+  /// Whether to use cached/previous values from [AsyncValue] while a new value
+  /// is loading.
+  ///
+  /// When `true` (default), the list can render items even if
+  /// `AsyncValue.isLoading == true` as long as `AsyncValue.hasValue == true`.
+  /// This includes Riverpod v3's offline persistence where `isFromCache` implies
+  /// `isLoading` and `hasValue`.
+  final bool useCache;
 
   /// Number of items per page.
   ///
@@ -107,7 +117,11 @@ class PaginatedListConfig<T> {
 
   /// Returns true if first page is currently loading.
   bool watchIsLoading(WidgetRef ref) {
-    return ref.watch(firstPageProvider()).isLoading;
+    final firstPageAsync = ref.watch(firstPageProvider());
+    if (useCache) {
+      return firstPageAsync.isLoading && !firstPageAsync.hasValue;
+    }
+    return firstPageAsync.isLoading;
   }
 
   /// Returns the item count for ListView.builder.
@@ -138,7 +152,8 @@ class PaginatedListConfig<T> {
   /// Returns `null` while loading, `true` if empty, `false` if has items.
   bool? watchIsEmpty(WidgetRef ref) {
     final firstPageAsync = ref.watch(firstPageProvider());
-    return firstPageAsync.whenOrNull(data: (items) => items.isEmpty);
+    final items = firstPageAsync.value;
+    return items?.isEmpty;
   }
 
   /// Watches the first page and returns true if the list has data items.
@@ -147,7 +162,8 @@ class PaginatedListConfig<T> {
   /// Returns `null` while loading, `true` if has items, `false` if empty.
   bool? watchHasItems(WidgetRef ref) {
     final firstPageAsync = ref.watch(firstPageProvider());
-    return firstPageAsync.whenOrNull(data: (items) => items.isNotEmpty);
+    final items = firstPageAsync.value;
+    return items?.isNotEmpty;
   }
 
   /// Builds an item for the given view index.
@@ -176,7 +192,7 @@ class PaginatedListConfig<T> {
     }
 
     // Check for external item first
-    final externalBuilder = externalItems?.get(viewIndex);
+    final externalBuilder = externalItems?[viewIndex];
     if (externalBuilder != null) {
       return Builder(builder: externalBuilder);
     }
@@ -189,9 +205,9 @@ class PaginatedListConfig<T> {
     );
     final indexInPage = dataIndex % pageSize;
 
-    final itemAsync = ref.watch(
-      watchPage(paging).select((value) => value.whenData((list) => list.getOrNull(indexInPage))),
-    );
+    final pageAsync = ref.watch(watchPage(paging));
+    final list = useCache ? pageAsync.value : pageAsync.whenOrNull(data: (v) => v);
+    final item = list?.getOrNull(indexInPage);
 
     // Detect if scrolled backward, then we need full loading of disposed items, otherwise
     // it will show awkward flickering due to items being disposed
@@ -206,25 +222,29 @@ class PaginatedListConfig<T> {
     );
     final showLoadingAllPageItems = hasNextPage;
 
-    return itemAsync.when(
-      data: (item) => item != null ? builder(item, dataIndex) : null,
-      loading: () {
-        if (indexInPage == 0 && !showLoadingAllPageItems) {
-          return loadingBuilder?.call(true) ?? const Text('Loading...');
-        }
+    if (item != null) {
+      return builder(item, dataIndex);
+    }
 
-        if (showLoadingAllPageItems) {
-          return loadingBuilder?.call(indexInPage == 0) ?? const Text('Loading...');
-        }
+    if (pageAsync.hasError) {
+      if (indexInPage == 0) {
+        return errorBuilder?.call(pageAsync.error!, pageAsync.stackTrace!, paging);
+      }
+      return null;
+    }
 
-        return null;
-      },
-      error: (e, s) {
-        if (indexInPage == 0) {
-          return errorBuilder?.call(e, s, paging);
-        }
-        return null;
-      },
-    );
+    if (pageAsync.isLoading) {
+      if (indexInPage == 0 && !showLoadingAllPageItems) {
+        return loadingBuilder?.call(true) ?? const Text('Loading...');
+      }
+
+      if (showLoadingAllPageItems) {
+        return loadingBuilder?.call(indexInPage == 0) ?? const Text('Loading...');
+      }
+
+      return null;
+    }
+
+    return null;
   }
 }

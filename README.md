@@ -17,7 +17,9 @@ Add to your `pubspec.yaml`:
 ```yaml
 dependencies:
   riverpod_paginated_list:
-    path: ../packages/riverpod_paginated_list
+    git:
+      url: https://github.com/pckimlong/riverpod_paginated_list.git
+      ref: main
 ```
 
 ## Usage
