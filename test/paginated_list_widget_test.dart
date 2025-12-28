@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:hooks_riverpod/legacy.dart' as legacy;
 import 'package:riverpod_paginated_list/riverpod_paginated_list.dart';
 
 void main() {
@@ -60,6 +63,135 @@ void main() {
       // itemCount should come from skeleton
       expect(find.text('count:3'), findsOneWidget);
       // scroll physics should be NeverScrollable when skeleton shown
+      expect(find.text('never:true'), findsOneWidget);
+    });
+
+    testWidgets('useCache=true renders cached items while first page is loading', (tester) async {
+      final versionProvider = legacy.StateProvider<int>((ref) => 0);
+      final pending = Completer<void>();
+
+      final pageProvider = FutureProvider.family<IList<String>, Paging>((ref, paging) async {
+        final version = ref.watch(versionProvider);
+        if (version == 0) {
+          return const IListConst(['A', 'B']);
+        }
+        await pending.future;
+        return const IListConst(['A', 'B']);
+      });
+
+      final config = PaginatedListConfig<String>(
+        watchPage: (paging) => pageProvider(paging),
+        skeleton: SkeletonConfig(itemCount: 3, itemBuilder: (c, i) => Text('skeleton:$i')),
+        pageSize: 10,
+        firstPageIsZeroBased: true,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Consumer(
+                builder: (context, ref, _) {
+                  final item = config.buildItem(
+                    context: context,
+                    ref: ref,
+                    viewIndex: 0,
+                    builder: (s, i) => Text('item:$s#$i'),
+                  );
+
+                  final count = config.getItemCount(ref);
+                  final physicsIsNever =
+                      config.getScrollPhysics(ref) is NeverScrollableScrollPhysics;
+
+                  return Column(
+                    children: [
+                      item ?? const SizedBox.shrink(),
+                      Text('count:$count'),
+                      Text('never:$physicsIsNever'),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final container = ProviderScope.containerOf(tester.element(find.byType(Consumer).first));
+      container.read(versionProvider.notifier).state = 1;
+      await tester.pump();
+
+      // cached value should render, skeleton should not
+      expect(find.text('item:A#0'), findsOneWidget);
+      expect(find.textContaining('skeleton:'), findsNothing);
+      expect(find.text('count:null'), findsOneWidget);
+      expect(find.text('never:false'), findsOneWidget);
+    });
+
+    testWidgets('useCache=false shows skeleton while first page is loading even if cached', (
+      tester,
+    ) async {
+      final versionProvider = legacy.StateProvider<int>((ref) => 0);
+      final pending = Completer<void>();
+
+      final pageProvider = FutureProvider.family<IList<String>, Paging>((ref, paging) async {
+        final version = ref.watch(versionProvider);
+        if (version == 0) {
+          return const IListConst(['A', 'B']);
+        }
+        await pending.future;
+        return const IListConst(['A', 'B']);
+      });
+
+      final config = PaginatedListConfig<String>(
+        watchPage: (paging) => pageProvider(paging),
+        useCache: false,
+        skeleton: SkeletonConfig(itemCount: 3, itemBuilder: (c, i) => Text('skeleton:$i')),
+        pageSize: 10,
+        firstPageIsZeroBased: true,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Consumer(
+                builder: (context, ref, _) {
+                  final item = config.buildItem(
+                    context: context,
+                    ref: ref,
+                    viewIndex: 1,
+                    builder: (s, i) => Text('item:$s#$i'),
+                  );
+
+                  final count = config.getItemCount(ref);
+                  final physicsIsNever =
+                      config.getScrollPhysics(ref) is NeverScrollableScrollPhysics;
+
+                  return Column(
+                    children: [
+                      item ?? const SizedBox.shrink(),
+                      Text('count:$count'),
+                      Text('never:$physicsIsNever'),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final container = ProviderScope.containerOf(tester.element(find.byType(Consumer).first));
+      container.read(versionProvider.notifier).state = 1;
+      await tester.pump();
+
+      expect(find.text('skeleton:1'), findsOneWidget);
+      expect(find.text('count:3'), findsOneWidget);
       expect(find.text('never:true'), findsOneWidget);
     });
 
