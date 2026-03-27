@@ -1,0 +1,4 @@
+interface:
+  display_name: "Riverpod Paginated List"
+  short_description: "Integrate paginated Riverpod lists safely"
+  default_prompt: "Use $riverpod-paginated-list to add or debug a paginated Flutter list with this package."
