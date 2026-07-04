@@ -1,13 +1,13 @@
 name: riverpod_paginated_list
 description: A lightweight pagination utility for Flutter with Riverpod. Supports skeleton loading, external items injection, and both zero-based and one-based pagination.
-version: 0.1.2
+version: 0.2.0
 homepage: https://github.com/pckimong/riverpod_paginated_list
 repository: https://github.com/pckimong/riverpod_paginated_list
 issue_tracker: https://github.com/pckimong/riverpod_paginated_list/issues
 
 environment:
   sdk: ^3.10.1
-  flutter: ">=3.24.0"
+  flutter: ">=3.44.4"
 
 dependencies:
   flutter:

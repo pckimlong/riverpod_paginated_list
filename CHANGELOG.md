@@ -45,3 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `useCache` (default true) allows rendering cached/previous `AsyncValue.value` while loading (incl. Riverpod v3 `isFromCache`).
 - Skeleton loading is shown only for true initial loads when no cached/previous value is available.
+
+## [0.2.0] - 2026-07-04
+
+- Implement Record-based `PaginatedListBuilder` and custom scroll physics.
+- Add `useCache` option to control cached value rendering during loading.
+- Improve external items handling in pagination.
+- Reformat code and update dependency versions.

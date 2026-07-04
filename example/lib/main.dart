@@ -62,7 +62,8 @@ Future<IList<Product>> fetchProducts({
 }
 
 /// Provider for fetching products - this is what you'd generate with @riverpod
-final productsProvider = FutureProvider.family<IList<Product>, Paging>((ref, paging) async {
+final productsProvider =
+    FutureProvider.family<IList<Product>, Paging>((ref, paging) async {
   return fetchProducts(
     offset: paging.offset,
     limit: paging.pageSize,
@@ -114,7 +115,8 @@ class ProductListPage extends ConsumerWidget {
             icon: const Icon(Icons.view_list),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ExternalItemsExamplePage()),
+                MaterialPageRoute(
+                    builder: (_) => const ExternalItemsExamplePage()),
               );
             },
             tooltip: 'External Items Example',

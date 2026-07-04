@@ -2,7 +2,9 @@
 ///
 /// This is an extension type that wraps a tuple of (page, pageSize, firstPageIsZeroBased).
 /// It provides convenient getters and a factory for calculating page from list index.
-extension type Paging._((int page, int pageSize, bool firstPageIsZeroBased) param) {
+extension type Paging._(
+  (int page, int pageSize, bool firstPageIsZeroBased) param
+) {
   /// The current page number.
   int get page => param.$1;
 
@@ -16,7 +18,8 @@ extension type Paging._((int page, int pageSize, bool firstPageIsZeroBased) para
   ///
   /// For zero-based: offset = page * pageSize
   /// For one-based: offset = (page - 1) * pageSize
-  int get offset => firstPageIsZeroBased ? page * pageSize : (page - 1) * pageSize;
+  int get offset =>
+      firstPageIsZeroBased ? page * pageSize : (page - 1) * pageSize;
 
   /// Creates a [Paging] instance from a list index.
   ///
@@ -31,14 +34,22 @@ extension type Paging._((int page, int pageSize, bool firstPageIsZeroBased) para
   /// final paging = Paging.ofIndex(15, pageSize: 10);
   /// print(paging.page); // 1 (zero-based) or 2 (one-based)
   /// ```
-  static Paging ofIndex(int index, {required int pageSize, bool firstPageIsZeroBased = true}) {
+  static Paging ofIndex(
+    int index, {
+    required int pageSize,
+    bool firstPageIsZeroBased = true,
+  }) {
     final page = index ~/ pageSize;
     final adjustedPage = firstPageIsZeroBased ? page : page + 1;
     return Paging._((adjustedPage, pageSize, firstPageIsZeroBased));
   }
 
   /// Creates a [Paging] instance directly from page number.
-  static Paging of(int page, {required int pageSize, bool firstPageIsZeroBased = true}) {
+  static Paging of(
+    int page, {
+    required int pageSize,
+    bool firstPageIsZeroBased = true,
+  }) {
     return Paging._((page, pageSize, firstPageIsZeroBased));
   }
 }
