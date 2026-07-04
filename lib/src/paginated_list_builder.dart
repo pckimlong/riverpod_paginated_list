@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -49,16 +47,19 @@ class PaginatedListBuilder<T> extends ConsumerStatefulWidget {
   final PaginatedListConfig<T> config;
 
   /// The builder function that yields the pagination state.
-  final Widget Function(BuildContext context, PaginatedListState<T> state) builder;
+  final Widget Function(BuildContext context, PaginatedListState<T> state)
+  builder;
 
   /// The base scroll physics to use when the list is not in a loading lock state.
   final ScrollPhysics? physics;
 
   @override
-  ConsumerState<PaginatedListBuilder<T>> createState() => _PaginatedListBuilderState<T>();
+  ConsumerState<PaginatedListBuilder<T>> createState() =>
+      _PaginatedListBuilderState<T>();
 }
 
-class _PaginatedListBuilderState<T> extends ConsumerState<PaginatedListBuilder<T>> {
+class _PaginatedListBuilderState<T>
+    extends ConsumerState<PaginatedListBuilder<T>> {
   final Set<int> _requestedPages = {};
 
   @override
@@ -82,7 +83,6 @@ class _PaginatedListBuilderState<T> extends ConsumerState<PaginatedListBuilder<T
   Widget build(BuildContext context) {
     final firstPage = widget.config.firstPage;
     final pageSize = widget.config.pageSize;
-    final skeletonCount = widget.config.skeleton?.itemCount ?? 3;
 
     // Reset requested pages if first page is loading from scratch (refresh/initial)
     final firstPageAsync = ref.watch(widget.config.firstPageProvider());
@@ -130,7 +130,9 @@ class _PaginatedListBuilderState<T> extends ConsumerState<PaginatedListBuilder<T
     // we still have more data to load.
     if (sortedRequestedPages.isNotEmpty) {
       final lastRequestedPage = sortedRequestedPages.last;
-      final lastPageAsync = ref.watch(widget.config.pageProvider(lastRequestedPage));
+      final lastPageAsync = ref.watch(
+        widget.config.pageProvider(lastRequestedPage),
+      );
       if (lastPageAsync.hasValue && lastPageAsync.value!.length == pageSize) {
         hasMore = true;
       }

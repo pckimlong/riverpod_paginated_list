@@ -12,13 +12,17 @@ void main() {
     });
 
     test('returns viewIndex when external items is empty', () {
-      final config = _TestableConfig(externalItems: <int, Widget Function(BuildContext)>{});
+      final config = _TestableConfig(
+        externalItems: <int, Widget Function(BuildContext)>{},
+      );
       expect(config.getDataIndex(0), 0);
       expect(config.getDataIndex(5), 5);
     });
 
     test('adjusts index for single external item at start', () {
-      final config = _TestableConfig(externalItems: {0: (_) => const SizedBox()});
+      final config = _TestableConfig(
+        externalItems: {0: (_) => const SizedBox()},
+      );
       expect(config.getDataIndex(0), -1);
       expect(config.getDataIndex(1), 0);
       expect(config.getDataIndex(2), 1);
@@ -36,7 +40,9 @@ void main() {
     });
 
     test('handles external items not at start', () {
-      final config = _TestableConfig(externalItems: {3: (_) => const SizedBox()});
+      final config = _TestableConfig(
+        externalItems: {3: (_) => const SizedBox()},
+      );
       expect(config.getDataIndex(0), 0);
       expect(config.getDataIndex(2), 2);
       expect(config.getDataIndex(3), 2);
@@ -48,8 +54,10 @@ void main() {
 
 /// Testable subclass to expose private _getDataIndex method
 class _TestableConfig extends PaginatedListConfig<String> {
-  _TestableConfig({super.externalItems}) : super(watchPage: (_) => throw UnimplementedError());
+  _TestableConfig({super.externalItems})
+    : super(watchPage: (_) => throw UnimplementedError());
 
+  @override
   int getDataIndex(int viewIndex) {
     final external = externalItems;
     if (external == null || external.isEmpty) return viewIndex;

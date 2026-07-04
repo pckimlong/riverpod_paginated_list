@@ -2,54 +2,62 @@ import 'dart:async';
 
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_paginated_list/riverpod_paginated_list.dart';
 
 void main() {
   group('PaginatedListBuilder', () {
-    testWidgets('shows skeleton count and lock physics when first page is loading', (tester) async {
-      final map = <int, AsyncValue<IList<String>>>{
-        0: const AsyncValue.loading(),
-      };
+    testWidgets(
+      'shows skeleton count and lock physics when first page is loading',
+      (tester) async {
+        final map = <int, AsyncValue<IList<String>>>{
+          0: const AsyncValue.loading(),
+        };
 
-      final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
-        skeleton: SkeletonConfig(
-          itemCount: 5,
-          itemBuilder: (context, index) => Text('skeleton:$index'),
-        ),
-        pageSize: 10,
-      );
+        final config = PaginatedListConfig<String>(
+          watchPage: (paging) => Provider(
+            (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+          ),
+          skeleton: SkeletonConfig(
+            itemCount: 5,
+            itemBuilder: (context, index) => Text('skeleton:$index'),
+          ),
+          pageSize: 10,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: PaginatedListBuilder<String>(
-                config: config,
-                builder: (context, state) {
-                  return Column(
-                    children: [
-                      Text('isLoading:${state.isLoading}'),
-                      Text('count:${state.count}'),
-                      Text('physics:${state.physics.runtimeType}'),
-                    ],
-                  );
-                },
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PaginatedListBuilder<String>(
+                  config: config,
+                  builder: (context, state) {
+                    return Column(
+                      children: [
+                        Text('isLoading:${state.isLoading}'),
+                        Text('count:${state.count}'),
+                        Text('physics:${state.physics.runtimeType}'),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('isLoading:true'), findsOneWidget);
-      expect(find.text('count:5'), findsOneWidget);
-      expect(find.text('physics:NeverScrollableScrollPhysics'), findsOneWidget);
-    });
+        expect(find.text('isLoading:true'), findsOneWidget);
+        expect(find.text('count:5'), findsOneWidget);
+        expect(
+          find.text('physics:NeverScrollableScrollPhysics'),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('shows isEmpty:true when first page is empty', (tester) async {
       final map = <int, AsyncValue<IList<String>>>{
@@ -57,8 +65,9 @@ void main() {
       };
 
       final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         pageSize: 10,
       );
 
@@ -90,102 +99,118 @@ void main() {
       expect(find.text('count:0'), findsOneWidget);
     });
 
-    testWidgets('paginates lazily on itemAt and handles fetching/success/error', (tester) async {
-      final controller = StreamController<IList<String>>();
-      final page1Completer = Completer<IList<String>>();
-      final scrollController = ScrollController();
+    testWidgets(
+      'paginates lazily on itemAt and handles fetching/success/error',
+      (tester) async {
+        final controller = StreamController<IList<String>>();
+        final page1Completer = Completer<IList<String>>();
+        final scrollController = ScrollController();
 
-      final map = <int, FutureOr<IList<String>>>{
-        0: const IListConst(['item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'item6', 'item7', 'item8', 'item9']),
-        1: page1Completer.future,
-      };
+        final map = <int, FutureOr<IList<String>>>{
+          0: const IListConst([
+            'item0',
+            'item1',
+            'item2',
+            'item3',
+            'item4',
+            'item5',
+            'item6',
+            'item7',
+            'item8',
+            'item9',
+          ]),
+          1: page1Completer.future,
+        };
 
-      final providers = <int, FutureProvider<IList<String>>>{};
-      final config = PaginatedListConfig<String>(
-        watchPage: (paging) => providers.putIfAbsent(paging.page, () {
-          return FutureProvider((ref) async {
-            ref.keepAlive();
-            final res = map[paging.page];
-            if (res is Future<IList<String>>) {
-              return await res;
-            }
-            return res as IList<String>;
-          });
-        }),
-        pageSize: 10,
-      );
+        final providers = <int, FutureProvider<IList<String>>>{};
+        final config = PaginatedListConfig<String>(
+          watchPage: (paging) => providers.putIfAbsent(paging.page, () {
+            return FutureProvider((ref) async {
+              ref.keepAlive();
+              final res = map[paging.page];
+              if (res is Future<IList<String>>) {
+                return await res;
+              }
+              return res as IList<String>;
+            });
+          }),
+          pageSize: 10,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: PaginatedListBuilder<String>(
-                config: config,
-                builder: (context, state) {
-                  return Column(
-                    children: [
-                      Text('isFetchingNext:${state.isFetchingNext}'),
-                      Text('nextPageError:${state.nextPageError != null}'),
-                      Text('count:${state.count}'),
-                      Expanded(
-                        child: SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            controller: scrollController,
-                            physics: state.physics,
-                            cacheExtent: 0,
-                            itemCount: state.count,
-                            itemBuilder: (context, index) {
-                              final item = state.itemAt(index);
-                              return ListTile(
-                                title: Text(item ?? 'loading_shimmer'),
-                              );
-                            },
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PaginatedListBuilder<String>(
+                  config: config,
+                  builder: (context, state) {
+                    return Column(
+                      children: [
+                        Text('isFetchingNext:${state.isFetchingNext}'),
+                        Text('nextPageError:${state.nextPageError != null}'),
+                        Text('count:${state.count}'),
+                        Expanded(
+                          child: SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollCacheExtent: ScrollCacheExtent.pixels(0),
+                              controller: scrollController,
+                              physics: state.physics,
+                              itemCount: state.count,
+                              itemBuilder: (context, index) {
+                                final item = state.itemAt(index);
+                                return ListTile(
+                                  title: Text(item ?? 'loading_shimmer'),
+                                );
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Initially loads page 0
-      await tester.pump(); // Start load
-      await tester.pumpAndSettle(); // Settle load of page 0
+        // Initially loads page 0
+        await tester.pump(); // Start load
+        await tester.pumpAndSettle(); // Settle load of page 0
 
-      // Page 0 has 10 items (exactly pageSize). So hasMore is true.
-      expect(find.text('item0'), findsOneWidget);
-      expect(find.text('count:null'), findsOneWidget);
-      expect(find.text('isFetchingNext:false'), findsOneWidget);
+        // Page 0 has 10 items (exactly pageSize). So hasMore is true.
+        expect(find.text('item0'), findsOneWidget);
+        expect(find.text('count:null'), findsOneWidget);
+        expect(find.text('isFetchingNext:false'), findsOneWidget);
 
-      // Scroll to trigger rendering of index 10 (which belongs to page 1)
-      scrollController.jumpTo(500);
-      await tester.pump(); // 1. layout and schedule setState
-      await tester.pump(); // 2. run setState and watch provider
-      await tester.pump(); // 3. render loading state
+        // Scroll to trigger rendering of index 10 (which belongs to page 1)
+        scrollController.jumpTo(500);
+        await tester.pump(); // 1. layout and schedule setState
+        await tester.pump(); // 2. run setState and watch provider
+        await tester.pump(); // 3. render loading state
 
-      // Page 1 is loading (via page1Completer)
-      expect(find.text('isFetchingNext:true'), findsOneWidget);
-      expect(find.text('loading_shimmer'), findsWidgets);
+        // Page 1 is loading (via page1Completer)
+        expect(find.text('isFetchingNext:true'), findsOneWidget);
+        expect(find.text('loading_shimmer'), findsWidgets);
 
-      // Resolve page 1 success
-      page1Completer.complete(const IListConst(['item10', 'item11']));
-      await tester.pumpAndSettle();
+        // Resolve page 1 success
+        page1Completer.complete(const IListConst(['item10', 'item11']));
+        await tester.pumpAndSettle();
 
-      // Page 1 has 2 items (< pageSize), so hasMore becomes false.
-      expect(find.text('isFetchingNext:false'), findsOneWidget);
-      expect(find.text('item10'), findsOneWidget);
-      expect(find.text('item11'), findsOneWidget);
-      expect(find.text('count:12'), findsOneWidget);
-      
-      controller.close();
-    });
+        // Page 1 has 2 items (< pageSize), so hasMore becomes false.
+        expect(find.text('isFetchingNext:false'), findsOneWidget);
+        expect(find.text('item10'), findsOneWidget);
+        expect(find.text('item11'), findsOneWidget);
+        expect(find.text('count:12'), findsOneWidget);
 
-    testWidgets('exposes nextPageError and retries on retryNextPage()', (tester) async {
+        controller.close();
+      },
+    );
+
+    testWidgets('exposes nextPageError and retries on retryNextPage()', (
+      tester,
+    ) async {
       int page1Attempts = 0;
       final completers = [
         Completer<IList<String>>(),
@@ -200,9 +225,20 @@ void main() {
           return FutureProvider((ref) async {
             ref.keepAlive();
             if (paging.page == 0) {
-              return const IListConst(['item0', 'item1', 'item2', 'item3', 'item4', 'item5', 'item6', 'item7', 'item8', 'item9']);
+              return const IListConst([
+                'item0',
+                'item1',
+                'item2',
+                'item3',
+                'item4',
+                'item5',
+                'item6',
+                'item7',
+                'item8',
+                'item9',
+              ]);
             }
-            
+
             page1Attempts++;
             final completer = completers[page1Attempts - 1];
             return await completer.future;
@@ -228,8 +264,8 @@ void main() {
                         child: SizedBox(
                           height: 200,
                           child: ListView.builder(
+                            scrollCacheExtent: ScrollCacheExtent.pixels(0),
                             controller: scrollController,
-                            cacheExtent: 0,
                             itemCount: state.count,
                             itemBuilder: (context, index) {
                               if (hasError && index == 10) {
@@ -293,7 +329,9 @@ void main() {
       expect(find.byKey(const Key('retry_button')), findsNothing);
     });
 
-    testWidgets('supports externalItems and adjusts counts and index lookups', (tester) async {
+    testWidgets('supports externalItems and adjusts counts and index lookups', (
+      tester,
+    ) async {
       final providers = <int, Provider<AsyncValue<IList<String>>>>{};
       final config = PaginatedListConfig<String>(
         watchPage: (paging) => providers.putIfAbsent(paging.page, () {
@@ -353,7 +391,8 @@ void main() {
 
     testWidgets('supports custom scroll physics when loaded', (tester) async {
       final config = PaginatedListConfig<String>(
-        watchPage: (paging) => Provider((ref) => const AsyncValue.data(IListConst(['item0']))),
+        watchPage: (paging) =>
+            Provider((ref) => const AsyncValue.data(IListConst(['item0']))),
         pageSize: 10,
       );
 

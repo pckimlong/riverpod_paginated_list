@@ -9,16 +9,22 @@ import 'package:riverpod_paginated_list/riverpod_paginated_list.dart';
 
 void main() {
   group('PaginatedListConfig (widget behaviors)', () {
-    testWidgets('shows skeleton items while first page is loading', (tester) async {
+    testWidgets('shows skeleton items while first page is loading', (
+      tester,
+    ) async {
       final map = <int, AsyncValue<IList<String>>>{
         // first page is page 0 in zero-based mode
         0: const AsyncValue.loading(),
       };
 
       final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
-        skeleton: SkeletonConfig(itemCount: 3, itemBuilder: (c, i) => Text('skeleton:$i')),
+        watchPage: (paging) => Provider(
+          (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
+        skeleton: SkeletonConfig(
+          itemCount: 3,
+          itemBuilder: (c, i) => Text('skeleton:$i'),
+        ),
         pageSize: 10,
         firstPageIsZeroBased: true,
       );
@@ -40,7 +46,8 @@ void main() {
                   // expose some helper values for assertions
                   final count = config.getItemCount(ref);
                   final physicsIsNever =
-                      config.getScrollPhysics(ref) is NeverScrollableScrollPhysics;
+                      config.getScrollPhysics(ref)
+                          is NeverScrollableScrollPhysics;
 
                   return Column(
                     children: [
@@ -66,145 +73,170 @@ void main() {
       expect(find.text('never:true'), findsOneWidget);
     });
 
-    testWidgets('useCache=true renders cached items while first page is loading', (tester) async {
-      final versionProvider = legacy.StateProvider<int>((ref) => 0);
-      final pending = Completer<void>();
+    testWidgets(
+      'useCache=true renders cached items while first page is loading',
+      (tester) async {
+        final versionProvider = legacy.StateProvider<int>((ref) => 0);
+        final pending = Completer<void>();
 
-      final pageProvider = FutureProvider.family<IList<String>, Paging>((ref, paging) async {
-        final version = ref.watch(versionProvider);
-        if (version == 0) {
+        final pageProvider = FutureProvider.family<IList<String>, Paging>((
+          ref,
+          paging,
+        ) async {
+          final version = ref.watch(versionProvider);
+          if (version == 0) {
+            return const IListConst(['A', 'B']);
+          }
+          await pending.future;
           return const IListConst(['A', 'B']);
-        }
-        await pending.future;
-        return const IListConst(['A', 'B']);
-      });
+        });
 
-      final config = PaginatedListConfig<String>(
-        watchPage: (paging) => pageProvider(paging),
-        skeleton: SkeletonConfig(itemCount: 3, itemBuilder: (c, i) => Text('skeleton:$i')),
-        pageSize: 10,
-        firstPageIsZeroBased: true,
-      );
+        final config = PaginatedListConfig<String>(
+          watchPage: (paging) => pageProvider(paging),
+          skeleton: SkeletonConfig(
+            itemCount: 3,
+            itemBuilder: (c, i) => Text('skeleton:$i'),
+          ),
+          pageSize: 10,
+          firstPageIsZeroBased: true,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: Consumer(
-                builder: (context, ref, _) {
-                  final item = config.buildItem(
-                    context: context,
-                    ref: ref,
-                    viewIndex: 0,
-                    builder: (s, i) => Text('item:$s#$i'),
-                  );
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: Consumer(
+                  builder: (context, ref, _) {
+                    final item = config.buildItem(
+                      context: context,
+                      ref: ref,
+                      viewIndex: 0,
+                      builder: (s, i) => Text('item:$s#$i'),
+                    );
 
-                  final count = config.getItemCount(ref);
-                  final physicsIsNever =
-                      config.getScrollPhysics(ref) is NeverScrollableScrollPhysics;
+                    final count = config.getItemCount(ref);
+                    final physicsIsNever =
+                        config.getScrollPhysics(ref)
+                            is NeverScrollableScrollPhysics;
 
-                  return Column(
-                    children: [
-                      item ?? const SizedBox.shrink(),
-                      Text('count:$count'),
-                      Text('never:$physicsIsNever'),
-                    ],
-                  );
-                },
+                    return Column(
+                      children: [
+                        item ?? const SizedBox.shrink(),
+                        Text('count:$count'),
+                        Text('never:$physicsIsNever'),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      final container = ProviderScope.containerOf(tester.element(find.byType(Consumer).first));
-      container.read(versionProvider.notifier).state = 1;
-      await tester.pump();
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(Consumer).first),
+        );
+        container.read(versionProvider.notifier).state = 1;
+        await tester.pump();
 
-      // cached value should render, skeleton should not
-      expect(find.text('item:A#0'), findsOneWidget);
-      expect(find.textContaining('skeleton:'), findsNothing);
-      expect(find.text('count:null'), findsOneWidget);
-      expect(find.text('never:false'), findsOneWidget);
-    });
+        // cached value should render, skeleton should not
+        expect(find.text('item:A#0'), findsOneWidget);
+        expect(find.textContaining('skeleton:'), findsNothing);
+        expect(find.text('count:null'), findsOneWidget);
+        expect(find.text('never:false'), findsOneWidget);
+      },
+    );
 
-    testWidgets('useCache=false shows skeleton while first page is loading even if cached', (
-      tester,
-    ) async {
-      final versionProvider = legacy.StateProvider<int>((ref) => 0);
-      final pending = Completer<void>();
+    testWidgets(
+      'useCache=false shows skeleton while first page is loading even if cached',
+      (tester) async {
+        final versionProvider = legacy.StateProvider<int>((ref) => 0);
+        final pending = Completer<void>();
 
-      final pageProvider = FutureProvider.family<IList<String>, Paging>((ref, paging) async {
-        final version = ref.watch(versionProvider);
-        if (version == 0) {
+        final pageProvider = FutureProvider.family<IList<String>, Paging>((
+          ref,
+          paging,
+        ) async {
+          final version = ref.watch(versionProvider);
+          if (version == 0) {
+            return const IListConst(['A', 'B']);
+          }
+          await pending.future;
           return const IListConst(['A', 'B']);
-        }
-        await pending.future;
-        return const IListConst(['A', 'B']);
-      });
+        });
 
-      final config = PaginatedListConfig<String>(
-        watchPage: (paging) => pageProvider(paging),
-        useCache: false,
-        skeleton: SkeletonConfig(itemCount: 3, itemBuilder: (c, i) => Text('skeleton:$i')),
-        pageSize: 10,
-        firstPageIsZeroBased: true,
-      );
+        final config = PaginatedListConfig<String>(
+          watchPage: (paging) => pageProvider(paging),
+          useCache: false,
+          skeleton: SkeletonConfig(
+            itemCount: 3,
+            itemBuilder: (c, i) => Text('skeleton:$i'),
+          ),
+          pageSize: 10,
+          firstPageIsZeroBased: true,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: Consumer(
-                builder: (context, ref, _) {
-                  final item = config.buildItem(
-                    context: context,
-                    ref: ref,
-                    viewIndex: 1,
-                    builder: (s, i) => Text('item:$s#$i'),
-                  );
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: Consumer(
+                  builder: (context, ref, _) {
+                    final item = config.buildItem(
+                      context: context,
+                      ref: ref,
+                      viewIndex: 1,
+                      builder: (s, i) => Text('item:$s#$i'),
+                    );
 
-                  final count = config.getItemCount(ref);
-                  final physicsIsNever =
-                      config.getScrollPhysics(ref) is NeverScrollableScrollPhysics;
+                    final count = config.getItemCount(ref);
+                    final physicsIsNever =
+                        config.getScrollPhysics(ref)
+                            is NeverScrollableScrollPhysics;
 
-                  return Column(
-                    children: [
-                      item ?? const SizedBox.shrink(),
-                      Text('count:$count'),
-                      Text('never:$physicsIsNever'),
-                    ],
-                  );
-                },
+                    return Column(
+                      children: [
+                        item ?? const SizedBox.shrink(),
+                        Text('count:$count'),
+                        Text('never:$physicsIsNever'),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      final container = ProviderScope.containerOf(tester.element(find.byType(Consumer).first));
-      container.read(versionProvider.notifier).state = 1;
-      await tester.pump();
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(Consumer).first),
+        );
+        container.read(versionProvider.notifier).state = 1;
+        await tester.pump();
 
-      expect(find.text('skeleton:1'), findsOneWidget);
-      expect(find.text('count:3'), findsOneWidget);
-      expect(find.text('never:true'), findsOneWidget);
-    });
+        expect(find.text('skeleton:1'), findsOneWidget);
+        expect(find.text('count:3'), findsOneWidget);
+        expect(find.text('never:true'), findsOneWidget);
+      },
+    );
 
     testWidgets('external item at view index takes precedence', (tester) async {
       final map = <int, AsyncValue<IList<String>>>{
         0: AsyncValue.data(const IListConst(['A'])),
       };
 
-      final external = <int, Widget Function(BuildContext)>{0: (_) => const Text('external')};
+      final external = <int, Widget Function(BuildContext)>{
+        0: (_) => const Text('external'),
+      };
 
       final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         externalItems: external,
         pageSize: 10,
       );
@@ -237,101 +269,108 @@ void main() {
       expect(find.textContaining('item:'), findsNothing);
     });
 
-    testWidgets('buildItem returns data item when available and null when index missing', (
-      tester,
-    ) async {
-      final map = <int, AsyncValue<IList<String>>>{
-        0: AsyncValue.data(const IListConst(['A', 'B', 'C'])),
-      };
+    testWidgets(
+      'buildItem returns data item when available and null when index missing',
+      (tester) async {
+        final map = <int, AsyncValue<IList<String>>>{
+          0: AsyncValue.data(const IListConst(['A', 'B', 'C'])),
+        };
 
-      final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
-        pageSize: 10,
-      );
+        final config = PaginatedListConfig<String>(
+          watchPage: (paging) => Provider(
+            (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+          ),
+          pageSize: 10,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: Column(
-                children: [
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final item = config.buildItem(
-                        context: context,
-                        ref: ref,
-                        viewIndex: 0,
-                        builder: (s, i) => Text('item:$s#$i'),
-                      );
-                      return item ?? const SizedBox.shrink();
-                    },
-                  ),
-                  // missing index -> should return null which we fallback to SizedBox
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final item = config.buildItem(
-                        context: context,
-                        ref: ref,
-                        viewIndex: 99, // out of range
-                        builder: (s, i) => Text('item:$s#$i'),
-                      );
-                      return item ?? const SizedBox(key: Key('missing'));
-                    },
-                  ),
-                ],
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: Column(
+                  children: [
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final item = config.buildItem(
+                          context: context,
+                          ref: ref,
+                          viewIndex: 0,
+                          builder: (s, i) => Text('item:$s#$i'),
+                        );
+                        return item ?? const SizedBox.shrink();
+                      },
+                    ),
+                    // missing index -> should return null which we fallback to SizedBox
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final item = config.buildItem(
+                          context: context,
+                          ref: ref,
+                          viewIndex: 99, // out of range
+                          builder: (s, i) => Text('item:$s#$i'),
+                        );
+                        return item ?? const SizedBox(key: Key('missing'));
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('item:A#0'), findsOneWidget);
-      // out of range should produce the fallback SizedBox with key
-      expect(find.byKey(const Key('missing')), findsOneWidget);
-    });
+        expect(find.text('item:A#0'), findsOneWidget);
+        // out of range should produce the fallback SizedBox with key
+        expect(find.byKey(const Key('missing')), findsOneWidget);
+      },
+    );
 
-    testWidgets('loadingBuilder used correctly for subsequent pages (no next page)', (
-      tester,
-    ) async {
-      // small page size so index 0 -> page 0, index 2 -> page 1
-      final map = <int, AsyncValue<IList<String>>>{1: const AsyncValue.loading()};
+    testWidgets(
+      'loadingBuilder used correctly for subsequent pages (no next page)',
+      (tester) async {
+        // small page size so index 0 -> page 0, index 2 -> page 1
+        final map = <int, AsyncValue<IList<String>>>{
+          1: const AsyncValue.loading(),
+        };
 
-      final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
-        pageSize: 2,
-      );
+        final config = PaginatedListConfig<String>(
+          watchPage: (paging) => Provider(
+            (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+          ),
+          pageSize: 2,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: Consumer(
-                builder: (context, ref, _) {
-                  // simulate asking for page 1 items at viewIndex that maps to dataIndex 2
-                  final item = config.buildItem(
-                    context: context,
-                    ref: ref,
-                    viewIndex: 2, // dataIndex 2 -> page 1 indexInPage 0
-                    builder: (s, i) => Text('item:$s#$i'),
-                    loadingBuilder: (isFirst) => Text('loading-first:$isFirst'),
-                  );
-                  return item ?? const SizedBox.shrink();
-                },
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: Consumer(
+                  builder: (context, ref, _) {
+                    // simulate asking for page 1 items at viewIndex that maps to dataIndex 2
+                    final item = config.buildItem(
+                      context: context,
+                      ref: ref,
+                      viewIndex: 2, // dataIndex 2 -> page 1 indexInPage 0
+                      builder: (s, i) => Text('item:$s#$i'),
+                      loadingBuilder: (isFirst) =>
+                          Text('loading-first:$isFirst'),
+                    );
+                    return item ?? const SizedBox.shrink();
+                  },
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      // when the page is loading and there is no next page, loadingBuilder(true) should be used
-      expect(find.text('loading-first:true'), findsOneWidget);
-    });
+        // when the page is loading and there is no next page, loadingBuilder(true) should be used
+        expect(find.text('loading-first:true'), findsOneWidget);
+      },
+    );
 
     testWidgets('loadingBuilder used correctly for subsequent pages (with next page)', (
       tester,
@@ -343,8 +382,9 @@ void main() {
       };
 
       final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         pageSize: 2,
       );
 
@@ -376,7 +416,10 @@ void main() {
                   );
 
                   return Column(
-                    children: [first ?? const SizedBox.shrink(), second ?? const SizedBox.shrink()],
+                    children: [
+                      first ?? const SizedBox.shrink(),
+                      second ?? const SizedBox.shrink(),
+                    ],
                   );
                 },
               ),
@@ -393,14 +436,20 @@ void main() {
       // but we are guaranteed to have the first index rendered with loadingBuilder
     });
 
-    testWidgets('errorBuilder used for page error on the first index in page', (tester) async {
+    testWidgets('errorBuilder used for page error on the first index in page', (
+      tester,
+    ) async {
       final map = <int, AsyncValue<IList<String>>>{
-        0: AsyncValue<IList<String>>.error(Exception('failed'), StackTrace.empty),
+        0: AsyncValue<IList<String>>.error(
+          Exception('failed'),
+          StackTrace.empty,
+        ),
       };
 
       final config = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => map[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) => map[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         pageSize: 2,
       );
 
@@ -434,11 +483,15 @@ void main() {
 
     testWidgets('watchIsEmpty and watchHasItems behavior', (tester) async {
       // first scenario: loading
-      final mapLoading = <int, AsyncValue<IList<String>>>{0: const AsyncValue.loading()};
+      final mapLoading = <int, AsyncValue<IList<String>>>{
+        0: const AsyncValue.loading(),
+      };
 
       final configLoading = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => mapLoading[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) =>
+              mapLoading[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         pageSize: 2,
       );
 
@@ -450,7 +503,9 @@ void main() {
                 builder: (context, ref, _) {
                   final isEmpty = configLoading.watchIsEmpty(ref);
                   final hasItems = configLoading.watchHasItems(ref);
-                  return Column(children: [Text('empty:$isEmpty'), Text('has:$hasItems')]);
+                  return Column(
+                    children: [Text('empty:$isEmpty'), Text('has:$hasItems')],
+                  );
                 },
               ),
             ),
@@ -463,11 +518,15 @@ void main() {
       expect(find.text('has:null'), findsOneWidget);
 
       // second scenario: empty data
-      final mapEmpty = <int, AsyncValue<IList<String>>>{0: AsyncValue.data(const IListConst([]))};
+      final mapEmpty = <int, AsyncValue<IList<String>>>{
+        0: AsyncValue.data(const IListConst([])),
+      };
 
       final configEmpty = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => mapEmpty[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) =>
+              mapEmpty[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         pageSize: 2,
       );
 
@@ -479,7 +538,9 @@ void main() {
                 builder: (context, ref, _) {
                   final isEmpty = configEmpty.watchIsEmpty(ref);
                   final hasItems = configEmpty.watchHasItems(ref);
-                  return Column(children: [Text('empty:$isEmpty'), Text('has:$hasItems')]);
+                  return Column(
+                    children: [Text('empty:$isEmpty'), Text('has:$hasItems')],
+                  );
                 },
               ),
             ),
@@ -497,8 +558,10 @@ void main() {
       };
 
       final configItems = PaginatedListConfig<String>(
-        watchPage: (paging) =>
-            Provider((ref) => mapItems[paging.page] ?? const AsyncValue.data(IListConst([]))),
+        watchPage: (paging) => Provider(
+          (ref) =>
+              mapItems[paging.page] ?? const AsyncValue.data(IListConst([])),
+        ),
         pageSize: 2,
       );
 
@@ -510,7 +573,9 @@ void main() {
                 builder: (context, ref, _) {
                   final isEmpty = configItems.watchIsEmpty(ref);
                   final hasItems = configItems.watchHasItems(ref);
-                  return Column(children: [Text('empty:$isEmpty'), Text('has:$hasItems')]);
+                  return Column(
+                    children: [Text('empty:$isEmpty'), Text('has:$hasItems')],
+                  );
                 },
               ),
             ),

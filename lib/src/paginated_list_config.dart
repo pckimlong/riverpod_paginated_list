@@ -1,7 +1,7 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:hooks_riverpod/misc.dart' show ProviderListenable, ProviderBase;
+import 'package:hooks_riverpod/misc.dart' show ProviderBase;
 
 import 'paging.dart';
 import 'skeleton_config.dart';
@@ -118,12 +118,21 @@ class PaginatedListConfig<T> {
   }
 
   /// Returns a provider for the specified page number.
-  ProviderBase<AsyncValue<IList<T>>> pageProvider(int page) =>
-      watchPage(Paging.of(page, pageSize: pageSize, firstPageIsZeroBased: firstPageIsZeroBased));
+  ProviderBase<AsyncValue<IList<T>>> pageProvider(int page) => watchPage(
+    Paging.of(
+      page,
+      pageSize: pageSize,
+      firstPageIsZeroBased: firstPageIsZeroBased,
+    ),
+  );
 
   /// Returns a provider for the first page.
   ProviderBase<AsyncValue<IList<T>>> firstPageProvider() => watchPage(
-    Paging.of(firstPage, pageSize: pageSize, firstPageIsZeroBased: firstPageIsZeroBased),
+    Paging.of(
+      firstPage,
+      pageSize: pageSize,
+      firstPageIsZeroBased: firstPageIsZeroBased,
+    ),
   );
 
   /// Returns true if first page is currently loading.
@@ -195,7 +204,8 @@ class PaginatedListConfig<T> {
     required int viewIndex,
     required Widget Function(T item, int dataIndex) builder,
     Widget Function(bool isFirstItem)? loadingBuilder,
-    Widget Function(Object error, StackTrace stack, Paging paging)? errorBuilder,
+    Widget Function(Object error, StackTrace stack, Paging paging)?
+    errorBuilder,
   }) {
     // Skeleton loading mode for first page
     if (skeleton != null && watchIsLoading(ref)) {
@@ -217,7 +227,9 @@ class PaginatedListConfig<T> {
     final indexInPage = dataIndex % pageSize;
 
     final pageAsync = ref.watch(watchPage(paging));
-    final list = useCache ? pageAsync.value : pageAsync.whenOrNull(data: (v) => v);
+    final list = useCache
+        ? pageAsync.value
+        : pageAsync.whenOrNull(data: (v) => v);
     final item = list?.getOrNull(indexInPage);
 
     // Detect if scrolled backward, then we need full loading of disposed items, otherwise
@@ -239,7 +251,11 @@ class PaginatedListConfig<T> {
 
     if (pageAsync.hasError) {
       if (indexInPage == 0) {
-        return errorBuilder?.call(pageAsync.error!, pageAsync.stackTrace!, paging);
+        return errorBuilder?.call(
+          pageAsync.error!,
+          pageAsync.stackTrace!,
+          paging,
+        );
       }
       return null;
     }
@@ -250,7 +266,8 @@ class PaginatedListConfig<T> {
       }
 
       if (showLoadingAllPageItems) {
-        return loadingBuilder?.call(indexInPage == 0) ?? const Text('Loading...');
+        return loadingBuilder?.call(indexInPage == 0) ??
+            const Text('Loading...');
       }
 
       return null;

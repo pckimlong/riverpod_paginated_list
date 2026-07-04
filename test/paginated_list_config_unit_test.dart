@@ -5,12 +5,16 @@ import 'package:riverpod_paginated_list/riverpod_paginated_list.dart';
 void main() {
   group('PaginatedListConfig', () {
     test('default pageSize is kDefaultPageSize', () {
-      final config = PaginatedListConfig<String>(watchPage: (_) => throw UnimplementedError());
+      final config = PaginatedListConfig<String>(
+        watchPage: (_) => throw UnimplementedError(),
+      );
       expect(config.pageSize, kDefaultPageSize);
     });
 
     test('default firstPageIsZeroBased is true', () {
-      final config = PaginatedListConfig<String>(watchPage: (_) => throw UnimplementedError());
+      final config = PaginatedListConfig<String>(
+        watchPage: (_) => throw UnimplementedError(),
+      );
       expect(config.firstPageIsZeroBased, true);
     });
 
@@ -47,7 +51,9 @@ void main() {
     });
 
     test('externalItems is null by default', () {
-      final config = PaginatedListConfig<String>(watchPage: (_) => throw UnimplementedError());
+      final config = PaginatedListConfig<String>(
+        watchPage: (_) => throw UnimplementedError(),
+      );
       expect(config.externalItems, isNull);
     });
 
@@ -66,14 +72,19 @@ void main() {
     });
 
     test('skeleton is null by default', () {
-      final config = PaginatedListConfig<String>(watchPage: (_) => throw UnimplementedError());
+      final config = PaginatedListConfig<String>(
+        watchPage: (_) => throw UnimplementedError(),
+      );
       expect(config.skeleton, isNull);
     });
 
     test('skeleton can be set', () {
       final config = PaginatedListConfig<String>(
         watchPage: (_) => throw UnimplementedError(),
-        skeleton: SkeletonConfig(itemCount: 15, itemBuilder: (context, index) => const SizedBox()),
+        skeleton: SkeletonConfig(
+          itemCount: 15,
+          itemBuilder: (context, index) => const SizedBox(),
+        ),
       );
       expect(config.skeleton, isNotNull);
       expect(config.skeleton!.itemCount, 15);
@@ -82,7 +93,9 @@ void main() {
 
   group('SkeletonConfig', () {
     test('default itemCount is 20', () {
-      final config = SkeletonConfig(itemBuilder: (context, index) => const SizedBox());
+      final config = SkeletonConfig(
+        itemBuilder: (context, index) => const SizedBox(),
+      );
       expect(config.itemCount, 20);
     });
 
