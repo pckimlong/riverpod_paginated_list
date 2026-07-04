@@ -106,12 +106,23 @@ class PaginatedListConfig<T> {
     return viewIndex - external.keys.where((pos) => pos <= viewIndex).length;
   }
 
+  /// Calculates the data index from a view index, accounting for external items.
+  int getDataIndex(int viewIndex) => _getDataIndex(viewIndex);
+
+  /// Internal registry for retry callbacks of different configurations.
+  static final retryCallbacks = Expando<void Function()>();
+
+  /// Retries loading the next page if it previously failed.
+  void retryNextPage() {
+    retryCallbacks[this]?.call();
+  }
+
   /// Returns a provider for the specified page number.
-  ProviderListenable<AsyncValue<IList<T>>> pageProvider(int page) =>
+  ProviderBase<AsyncValue<IList<T>>> pageProvider(int page) =>
       watchPage(Paging.of(page, pageSize: pageSize, firstPageIsZeroBased: firstPageIsZeroBased));
 
   /// Returns a provider for the first page.
-  ProviderListenable<AsyncValue<IList<T>>> firstPageProvider() => watchPage(
+  ProviderBase<AsyncValue<IList<T>>> firstPageProvider() => watchPage(
     Paging.of(firstPage, pageSize: pageSize, firstPageIsZeroBased: firstPageIsZeroBased),
   );
 
