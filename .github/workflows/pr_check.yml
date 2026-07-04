@@ -82,6 +82,10 @@ jobs:
         working-directory: example
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      - name: Create example android files
+        working-directory: example
+        run: flutter create --platforms=android .
+
       - name: Build example (Android APK)
         working-directory: example
         run: flutter build apk --debug --target-platform android-arm64
